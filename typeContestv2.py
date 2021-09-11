@@ -9,13 +9,6 @@ Created on Sat Sep 11 13:48:47 2021
 This version gives a specific time to the player to type a maximum of words.
 """
 
-
-"""
-To do:
-    - delete red flashes
-    - highlight the current word
-"""
-
 from requests import get
 from bs4 import BeautifulSoup
 import tkinter as tk
@@ -33,6 +26,12 @@ randomTextStringVar = tk.StringVar(window)
 
 #Label for the text to type
 textLabel = tk.Label(window,textvariable = randomTextStringVar, wraplength = 800)
+
+#StringVar for the current word to type
+currentWordStringVar = tk.StringVar(window)
+
+#Label for the current word to type
+currentWordLabel = tk.Label(window, textvariable = currentWordStringVar, font=("Courier", 30))
 
 #Entry where the player types
 entry = tk.Entry(window, justify = "center")
@@ -52,7 +51,7 @@ chronoLabel = tk.Label(window, textvariable = chronoStringVar)
 
 def newGame():
     #Function launching a new game
-    global errorsCounter, randomText, randomTextStringVar, entry, t1, textList, word, chronoStringVar, entry
+    global errorsCounter, randomText, randomTextStringVar, entry, t1, textList, word, chronoStringVar, entry, started
     url = "http://www.randomtextgenerator.com"
     html = get(url)
     soup = BeautifulSoup(html.text,"html.parser")
@@ -72,6 +71,8 @@ def newGame():
     textList = randomText.split(' ') #creating a list of every words of the sentence, for the future comparisons
     word = 0 #index of the word the player currently is at
     
+    currentWordStringVar.set(textList[word])
+    
     #Changing the text in the window
     randomTextStringVar.set(randomText)
     
@@ -79,6 +80,7 @@ def newGame():
     entry['state'] = 'normal'
     entry.delete(0, 'end')
     
+    #Displaying the first word in big font
     statsStringVar.set('\n\n\n\n\n\n\n\n\n')
     
     #Resetting the errors counter
@@ -86,6 +88,8 @@ def newGame():
     
     #Resetting the chronometer
     chronoStringVar.set("Time limit : " + str(timeLimit))
+    
+    started = False
     
     #Starting the comparison between the text and the input of the player
     compare()
@@ -95,6 +99,7 @@ def compare():
     global errorsCounter, textList, word, started, t1
     
     txt = entry.get()
+    currentWordStringVar.set(textList[word])
     
     if started == False:
         #As long as the player hasn't begun typing, the chronometer doesn't start
@@ -108,6 +113,7 @@ def compare():
         t2 = time()
         elapsedTime = int(t2 - t1)
         
+        #Updating the current goal word
         chronoStringVar.set("Time limit : " + str(timeLimit - elapsedTime)) #Updating the chronometer
         
         if len(txt) >0 and txt[-1] == ' ':
@@ -119,12 +125,13 @@ def compare():
             entry.delete(0, 'end')
             word += 1
         
-        if txt != textList[word][:len(txt)]:
-            #If what the player is typing is wrong, we indicating it by passing the background of the entry in red
-            entry['bg'] = 'red'
-        
         else:
-            entry['bg'] = 'white'
+            if txt != textList[word][:len(txt)]:
+                #If what the player is typing is wrong, we indicating it by passing the background of the entry in red
+                entry['bg'] = 'red'
+            
+            else:
+                entry['bg'] = 'white'
             
         if elapsedTime >= timeLimit:
             #When the chronometer reaches the end we enable the entry and display scores
@@ -188,11 +195,13 @@ def compare():
 newGame()    
 
 #Placing the different elements
-window.geometry('1200x500')
+window.geometry('1200x600')
 window.resizable(False,False)
 window.grid_columnconfigure(0, weight=1)
 
 textLabel.grid(pady = 20)
+
+currentWordLabel.grid(pady = 20)
 
 entry.grid(pady = 20, sticky = tk.EW)
 
